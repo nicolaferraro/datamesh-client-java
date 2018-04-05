@@ -15,12 +15,10 @@ public interface DataMeshClient {
         return new DefaultDataMeshClient(host, port);
     }
 
-    DataMeshReadableProjection readOnlyProjection();
+    DataMeshReadableProjection projection();
 
-    DataMeshProjection projection(DataMeshEvent<?> event);
+    Publisher<Void> pushEvent(Object data, String group, String name, String version);
 
-    Publisher<Void> pushEvent(Object data, String group, String name, String clientIdentifier, String clientVersion);
-
-    <T> void bind(Pattern group, Pattern name, Class<T> eventClass, Function<Publisher<DataMeshEvent<T>>, Publisher<DataMeshProjection>> processing);
+    <T> void onEvent(Pattern group, Pattern name, Pattern version, Class<T> eventClass, Function<DataMeshEvent<T>, Publisher<?>> processing);
 
 }

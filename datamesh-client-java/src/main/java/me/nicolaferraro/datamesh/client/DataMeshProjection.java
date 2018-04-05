@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface DataMeshProjection extends DataMeshReadableProjection {
 
-    Optional<DataMeshEvent<?>> getEvent();
+    Optional<DefaultDataMeshEvent<?>> getEvent();
 
     Mono<Void> upsert(String path, Object value);
 

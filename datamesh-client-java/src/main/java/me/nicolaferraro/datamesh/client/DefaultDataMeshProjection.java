@@ -16,7 +16,7 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
     private DataMeshGrpc.DataMeshStub stub;
 
-    private Optional<DataMeshEvent<?>> event;
+    private Optional<DefaultDataMeshEvent<?>> event;
 
     private Queue<Datamesh.Operation> operations;
 
@@ -24,14 +24,14 @@ class DefaultDataMeshProjection implements DataMeshProjection {
         this(stub, null);
     }
 
-    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub, DataMeshEvent<?> event) {
+    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub, DefaultDataMeshEvent<?> event) {
         this.stub = stub;
         this.event = Optional.ofNullable(event);
         this.operations = new ArrayBlockingQueue<>(10);
     }
 
     @Override
-    public Optional<DataMeshEvent<?>> getEvent() {
+    public Optional<DefaultDataMeshEvent<?>> getEvent() {
         return event;
     }
 
@@ -121,7 +121,6 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
         Datamesh.Event event = Datamesh.Event.newBuilder()
                 .setClientIdentifier(this.event.get().getClientIdentifier())
-                .setClientVersion(this.event.get().getClientVersion())
                 .build();
 
         Datamesh.Transaction tx = Datamesh.Transaction.newBuilder()

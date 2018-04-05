@@ -10,8 +10,8 @@ import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import me.nicolaferraro.datamesh.protobuf.Datamesh;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.MonoProcessor;
 
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -34,25 +34,20 @@ class DefaultDataMeshClient implements DataMeshClient {
     }
 
     @Override
-    public DataMeshProjection readOnlyProjection() {
+    public DataMeshProjection projection() {
         return new DefaultDataMeshProjection(this.stub);
     }
 
     @Override
-    public DataMeshProjection projection(DataMeshEvent<?> event) {
-        return new DefaultDataMeshProjection(this.stub, event);
-    }
-
-    @Override
-    public Publisher<Void> pushEvent(Object data, String group, String name, String clientIdentifier, String clientVersion) {
+    public Publisher<Void> pushEvent(Object data, String group, String name, String version) {
         try {
             byte[] dataBytes = JsonUtils.MAPPER.writeValueAsBytes(data);
             Datamesh.Event event = Datamesh.Event.newBuilder()
                     .setPayload(ByteString.copyFrom(dataBytes))
                     .setGroup(group)
                     .setName(name)
-                    .setClientIdentifier(clientIdentifier)
-                    .setClientVersion(clientVersion)
+                    .setClientIdentifier(UUID.randomUUID().toString())
+                    .setClientVersion(version)
                     .build();
 
             Flux<Void> result = GrpcReactorUtils.<Datamesh.Empty>bridgeCall(obs -> stub.push(event, obs))
@@ -60,7 +55,7 @@ class DefaultDataMeshClient implements DataMeshClient {
                     .cast(Void.class);
 
             // Trigger fast processing
-            DataMeshEvent<?> publicEvent = new DataMeshEvent<>(event.getGroup(), event.getName(),
+            DefaultDataMeshEvent<?> publicEvent = new DefaultDataMeshEvent<>(stub, event.getGroup(), event.getName(),
                     event.getClientIdentifier(), event.getClientVersion(), null, data);
             eventProcessor.enqueue(publicEvent);
 
@@ -71,8 +66,8 @@ class DefaultDataMeshClient implements DataMeshClient {
     }
 
     @Override
-    public <T> void bind(Pattern group, Pattern name, Class<T> eventClass, Function<Publisher<DataMeshEvent<T>>, Publisher<DataMeshProjection>> processing) {
-        eventProcessor.addProcessingFunction(group, name, eventClass, processing);
+    public <T> void onEvent(Pattern group, Pattern name, Pattern version, Class<T> eventClass, Function<DataMeshEvent<T>, Publisher<?>> processing) {
+        eventProcessor.addProcessingFunction(group, name, version, eventClass, processing);
     }
 
 }

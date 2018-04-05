@@ -14,9 +14,11 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
+        <awaitility.version>3.1.0</awaitility.version>
         <grpc.version>1.11.0</grpc.version>
         <jackson.version>2.9.5</jackson.version>
         <junit.version>4.12</junit.version>
+        <log4j2.version>2.11.0</log4j2.version>
         <protobuf.version>3.5.1</protobuf.version>
         <reactive-streams.version>1.0.2</reactive-streams.version>
         <reactor.version>3.1.6.RELEASE</reactor.version>

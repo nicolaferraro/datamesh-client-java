@@ -4,7 +4,7 @@ import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 
 import java.util.function.Supplier;
 
-public class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
+class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
 
     private DataMeshGrpc.DataMeshStub stub;
 

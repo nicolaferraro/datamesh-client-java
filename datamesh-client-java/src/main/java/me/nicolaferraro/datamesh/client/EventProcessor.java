@@ -17,12 +17,12 @@ class EventProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventProcessor.class);
 
-    private FluxSink<DefaultDataMeshEvent<?>> sink;
+    private FluxSink<DataMeshEvent<?>> sink;
 
     private Function<DataMeshEvent<?>, Publisher<?>> processors;
 
     public EventProcessor() {
-        UnicastProcessor<DefaultDataMeshEvent<?>> flux = UnicastProcessor.create();
+        UnicastProcessor<DataMeshEvent<?>> flux = UnicastProcessor.create();
         this.sink = flux.sink();
 
         this.processors = evt -> Flux.empty();
@@ -36,7 +36,7 @@ class EventProcessor {
                 .subscribe();
     }
 
-    public void enqueue(DefaultDataMeshEvent<?> event) {
+    public void enqueue(DataMeshEvent<?> event) {
         sink.next(event);
     }
 

@@ -10,6 +10,7 @@ import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import me.nicolaferraro.datamesh.protobuf.Datamesh;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 import java.util.function.Function;
@@ -23,6 +24,8 @@ class DefaultDataMeshClient implements DataMeshClient {
 
     private EventProcessor eventProcessor;
 
+    private EventDispatcher receiver;
+
     public DefaultDataMeshClient(String host) {
         this(host, DEFAULT_PORT);
     }
@@ -31,6 +34,7 @@ class DefaultDataMeshClient implements DataMeshClient {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         this.stub = DataMeshGrpc.newStub(channel);
         this.eventProcessor = new EventProcessor();
+        this.receiver = new EventDispatcher(stub, eventProcessor);
     }
 
     @Override
@@ -61,7 +65,7 @@ class DefaultDataMeshClient implements DataMeshClient {
 
             return result;
         } catch (JsonProcessingException e) {
-            throw new DataMeshClientException("Cannot serialize object to JSON", e);
+            return Mono.error(new DataMeshClientException("Cannot serialize object to JSON", e));
         }
     }
 

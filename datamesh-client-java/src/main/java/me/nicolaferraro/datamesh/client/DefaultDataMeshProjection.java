@@ -31,11 +31,6 @@ class DefaultDataMeshProjection implements DataMeshProjection {
     }
 
     @Override
-    public Optional<DefaultDataMeshEvent<?>> getEvent() {
-        return event;
-    }
-
-    @Override
     public <T> Mono<T> read(String path, Class<T> type) {
         Datamesh.Path dmPath = Datamesh.Path.newBuilder().setLocation(path).build();
 
@@ -128,7 +123,7 @@ class DefaultDataMeshProjection implements DataMeshProjection {
                 .addAllOperations(this.operations)
                 .build();
 
-        Flux<Void> result = GrpcReactorUtils.<Datamesh.Empty>bridgeCall(obs -> stub.fastProcess(tx, obs))
+        Flux<Void> result = GrpcReactorUtils.<Datamesh.Empty>bridgeCall(obs -> stub.process(tx, obs))
                 .filter(none -> false)
                 .cast(Void.class);
 

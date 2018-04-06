@@ -115,7 +115,10 @@ class DefaultDataMeshProjection implements DataMeshProjection {
         }
 
         Datamesh.Event event = Datamesh.Event.newBuilder()
+                .setGroup(this.event.get().getGroup())
+                .setName(this.event.get().getName())
                 .setClientIdentifier(this.event.get().getClientIdentifier())
+                .setClientVersion(this.event.get().getVersion())
                 .build();
 
         Datamesh.Transaction tx = Datamesh.Transaction.newBuilder()

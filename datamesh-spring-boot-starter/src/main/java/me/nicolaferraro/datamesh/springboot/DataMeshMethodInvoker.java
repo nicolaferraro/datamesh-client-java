@@ -1,16 +1,18 @@
 package me.nicolaferraro.datamesh.springboot;
 
 import me.nicolaferraro.datamesh.client.DataMeshClient;
+import me.nicolaferraro.datamesh.client.DataMeshClientException;
 import me.nicolaferraro.datamesh.client.DataMeshEvent;
 import me.nicolaferraro.datamesh.springboot.annotation.DataMeshListener;
 import org.reactivestreams.Publisher;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -43,19 +45,22 @@ class DataMeshMethodInvoker {
 
     protected Function<DataMeshEvent<Object>, Publisher<?>> findProcessingFunction() {
         return evt -> {
-
-            try {
-                Object result = method.invoke(bean, evt);
-                if (result instanceof Publisher) {
-                    return (Publisher<?>) result;
-                } else {
-                    return Mono.justOrEmpty(result);
-                }
-            } catch (Exception e) {
-                return Flux.error(e);
+            if (Publisher.class.isAssignableFrom(method.getReturnType())) {
+                return (Publisher<?>) invoke(method, bean, evt);
+            } else {
+                return Mono.just(true)
+                        .subscribeOn(Schedulers.newElastic("datamesh"))
+                        .map(b -> Optional.ofNullable(invoke(method, bean, evt)));
             }
-
         };
+    }
+
+    protected Object invoke(Method method, Object bean, DataMeshEvent evt) {
+        try {
+            return method.invoke(bean, evt);
+        } catch (Exception ex) {
+            throw new DataMeshClientException("Error while invoking user provided method " + method.getName() + " on class " + (bean != null ? bean.getClass().getCanonicalName() : "null"), ex);
+        }
     }
 
     protected Class<Object> findTargetClass() {

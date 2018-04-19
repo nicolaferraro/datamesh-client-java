@@ -4,6 +4,7 @@ import me.nicolaferraro.datamesh.client.util.JsonUtils;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
@@ -21,19 +22,32 @@ class EventProcessor {
 
     private Function<DataMeshEvent<?>, Publisher<?>> processors;
 
+    private Flux<?> connection;
+
+    private Disposable connectionSubscription;
+
     public EventProcessor() {
         UnicastProcessor<DataMeshEvent<?>> flux = UnicastProcessor.create();
         this.sink = flux.sink();
 
         this.processors = evt -> Flux.empty();
 
-        flux.delayUntil(evt -> this.processors.apply(evt))
+        this.connection = flux.delayUntil(evt -> this.processors.apply(evt))
                 .map(DataMeshEvent::projection)
-                .flatMap(DataMeshProjection::persist)
-                .map(result -> true)
-                .doOnError(e -> LOG.error("Cannot persist projection", e))
-                .onErrorReturn(false)
-                .subscribe();
+                .delayUntil(DataMeshProjection::persist);
+    }
+
+    public void start() {
+        if (this.connectionSubscription == null) {
+            this.connectionSubscription = connection.subscribe();
+        }
+    }
+
+    public void stop() {
+        if (this.connectionSubscription != null) {
+            this.connectionSubscription.dispose();
+            this.connectionSubscription = null;
+        }
     }
 
     public void enqueue(DataMeshEvent<?> event) {

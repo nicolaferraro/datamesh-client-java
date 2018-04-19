@@ -21,4 +21,8 @@ public interface DataMeshClient {
 
     <T> void onEvent(Pattern group, Pattern name, Pattern version, Class<T> eventClass, Function<DataMeshEvent<T>, Publisher<?>> processing);
 
+    void start();
+
+    void stop();
+
 }

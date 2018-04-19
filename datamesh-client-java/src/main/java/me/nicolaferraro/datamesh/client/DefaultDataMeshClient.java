@@ -38,6 +38,16 @@ class DefaultDataMeshClient implements DataMeshClient {
     }
 
     @Override
+    public void start() {
+        this.eventProcessor.start();
+    }
+
+    @Override
+    public void stop() {
+        this.eventProcessor.stop();
+    }
+
+    @Override
     public DataMeshProjection projection() {
         return new DefaultDataMeshProjection(this.stub);
     }

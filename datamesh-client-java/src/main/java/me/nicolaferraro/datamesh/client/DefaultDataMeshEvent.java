@@ -68,7 +68,7 @@ class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
     @Override
     public DataMeshProjection projection() {
         if (this.projection == null) {
-            this.projection = new DefaultDataMeshProjection(stub, this);
+            this.projection = new DefaultDataMeshProjection(stub, this, this.internalVersion);
         }
         return this.projection;
     }

@@ -18,21 +18,24 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
     private Optional<DefaultDataMeshEvent<?>> event;
 
+    private Optional<Long> internalVersion;
+
     private Queue<Datamesh.Operation> operations;
 
     public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub) {
-        this(stub, null);
+        this(stub, null, null);
     }
 
-    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub, DefaultDataMeshEvent<?> event) {
+    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub, DefaultDataMeshEvent<?> event, Long internalVersion) {
         this.stub = stub;
         this.event = Optional.ofNullable(event);
+        this.internalVersion = Optional.ofNullable(internalVersion);
         this.operations = new ArrayBlockingQueue<>(10);
     }
 
     @Override
     public <T> Mono<T> read(String path, Class<T> type) {
-        Datamesh.Path dmPath = Datamesh.Path.newBuilder().setLocation(path).build();
+        Datamesh.Path dmPath = buildPath(path);
 
         Flux<Datamesh.Data> flux = GrpcReactorUtils.bridgeCall(obs -> stub.read(dmPath, obs));
 
@@ -60,7 +63,7 @@ class DefaultDataMeshProjection implements DataMeshProjection {
             return Mono.error(new UnsupportedOperationException("Cannot change a read-only view"));
         }
 
-        Datamesh.Path dmPath = Datamesh.Path.newBuilder().setLocation(path).build();
+        Datamesh.Path dmPath = buildPath(path);
 
         byte[] marshalled;
         try {
@@ -93,7 +96,7 @@ class DefaultDataMeshProjection implements DataMeshProjection {
             return Mono.error(new UnsupportedOperationException("Cannot change a read-only view"));
         }
 
-        Datamesh.Path dmPath = Datamesh.Path.newBuilder().setLocation(path).build();
+        Datamesh.Path dmPath = buildPath(path);
 
         Datamesh.DeleteOperation delete = Datamesh.DeleteOperation.newBuilder()
                 .setPath(dmPath)
@@ -114,15 +117,18 @@ class DefaultDataMeshProjection implements DataMeshProjection {
             return Mono.error(new UnsupportedOperationException("Cannot change a read-only view"));
         }
 
-        Datamesh.Event event = Datamesh.Event.newBuilder()
+        Datamesh.Event.Builder eventBuilder = Datamesh.Event.newBuilder()
                 .setGroup(this.event.get().getGroup())
                 .setName(this.event.get().getName())
                 .setClientIdentifier(this.event.get().getClientIdentifier())
-                .setClientVersion(this.event.get().getVersion())
-                .build();
+                .setClientVersion(this.event.get().getVersion());
+
+        if (this.internalVersion.isPresent()) {
+            eventBuilder = eventBuilder.setVersion(this.internalVersion.get());
+        }
 
         Datamesh.Transaction tx = Datamesh.Transaction.newBuilder()
-                .setEvent(event)
+                .setEvent(eventBuilder.build())
                 .addAllOperations(this.operations)
                 .build();
 
@@ -133,6 +139,13 @@ class DefaultDataMeshProjection implements DataMeshProjection {
         return Mono.from(result);
     }
 
+    private Datamesh.Path buildPath(String location) {
+        Datamesh.Path.Builder dmPath = Datamesh.Path.newBuilder().setLocation(location);
+        if (this.internalVersion.isPresent()) {
+            dmPath = dmPath.setVersion(this.internalVersion.get());
+        }
+        return dmPath.build();
+    }
 
 
 }

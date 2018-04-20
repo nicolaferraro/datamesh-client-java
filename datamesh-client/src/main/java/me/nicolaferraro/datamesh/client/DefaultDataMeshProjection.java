@@ -40,9 +40,19 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
     @Override
     public <T> Mono<T> read(String path, Class<T> type) {
+        Datamesh.Context context = Datamesh.Context.newBuilder()
+                .setName(connectionInfo.getContextName())
+                .setRevision(connectionInfo.getContextRevision())
+                .build();
+
         Datamesh.Path dmPath = buildPath(path);
 
-        Flux<Datamesh.Data> flux = GrpcReactorUtils.bridgeCall(obs -> stub.read(dmPath, obs));
+        Datamesh.ReadRequest request = Datamesh.ReadRequest.newBuilder()
+                .setContext(context)
+                .setPath(dmPath)
+                .build();
+
+        Flux<Datamesh.Data> flux = GrpcReactorUtils.bridgeCall(obs -> stub.read(request, obs));
 
         return Mono.from(flux)
                 .doOnNext(this::registerRead)

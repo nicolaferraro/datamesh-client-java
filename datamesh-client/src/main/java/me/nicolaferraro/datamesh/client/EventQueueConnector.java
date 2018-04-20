@@ -38,7 +38,7 @@ class EventQueueConnector {
         if (!this.running) {
             this.running = true;
             persistentStream()
-                    .map(evt -> new DefaultDataMeshEvent<>(stub, evt.getGroup(), evt.getName(),
+                    .map(evt -> new DefaultDataMeshEvent<>(connectionInfo, stub, evt.getGroup(), evt.getName(),
                             evt.getClientIdentifier(), evt.getClientVersion(), evt.getVersion(),
                             evt.getPayload().toByteArray()))
                     .doOnNext(devt -> processor.enqueue(devt))

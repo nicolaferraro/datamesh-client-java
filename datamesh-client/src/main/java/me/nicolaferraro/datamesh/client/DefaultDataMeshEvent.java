@@ -1,5 +1,6 @@
 package me.nicolaferraro.datamesh.client;
 
+import me.nicolaferraro.datamesh.client.api.DataMeshConnectionInfo;
 import me.nicolaferraro.datamesh.client.api.DataMeshEvent;
 import me.nicolaferraro.datamesh.client.api.DataMeshProjection;
 import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
@@ -7,6 +8,8 @@ import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import java.util.function.Supplier;
 
 class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
+
+    private DataMeshConnectionInfo connectionInfo;
 
     private DataMeshGrpc.DataMeshStub stub;
 
@@ -24,11 +27,12 @@ class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
 
     private DefaultDataMeshProjection projection;
 
-    DefaultDataMeshEvent(DataMeshGrpc.DataMeshStub stub, String group, String name, String clientIdentifier, String clientVersion, Long internalVersion, T payload) {
-       this(stub, group, name, clientIdentifier, clientVersion, internalVersion, payload, null);
+    DefaultDataMeshEvent(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub, String group, String name, String clientIdentifier, String clientVersion, Long internalVersion, T payload) {
+       this(connectionInfo, stub, group, name, clientIdentifier, clientVersion, internalVersion, payload, null);
     }
 
-    DefaultDataMeshEvent(DataMeshGrpc.DataMeshStub stub, String group, String name, String clientIdentifier, String clientVersion, Long internalVersion, T payload, DefaultDataMeshProjection projection) {
+    DefaultDataMeshEvent(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub, String group, String name, String clientIdentifier, String clientVersion, Long internalVersion, T payload, DefaultDataMeshProjection projection) {
+        this.connectionInfo = connectionInfo;
         this.stub = stub;
         this.group = group;
         this.name = name;
@@ -70,7 +74,7 @@ class DefaultDataMeshEvent<T> implements DataMeshEvent<T> {
     @Override
     public DataMeshProjection projection() {
         if (this.projection == null) {
-            this.projection = new DefaultDataMeshProjection(stub, this, this.internalVersion);
+            this.projection = new DefaultDataMeshProjection(connectionInfo, stub, this, this.internalVersion);
         }
         return this.projection;
     }

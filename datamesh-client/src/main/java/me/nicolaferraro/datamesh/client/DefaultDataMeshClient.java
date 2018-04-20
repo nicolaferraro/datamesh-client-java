@@ -52,7 +52,7 @@ class DefaultDataMeshClient implements DataMeshClient {
 
     @Override
     public DataMeshProjection projection() {
-        return new DefaultDataMeshProjection(this.stub);
+        return new DefaultDataMeshProjection(this.connectionInfo, this.stub);
     }
 
     @Override
@@ -72,7 +72,7 @@ class DefaultDataMeshClient implements DataMeshClient {
                     .cast(Void.class);
 
             // Trigger fast processing
-            DefaultDataMeshEvent<?> publicEvent = new DefaultDataMeshEvent<>(stub, event.getGroup(), event.getName(),
+            DefaultDataMeshEvent<?> publicEvent = new DefaultDataMeshEvent<>(connectionInfo, stub, event.getGroup(), event.getName(),
                     event.getClientIdentifier(), event.getClientVersion(), null, data);
             eventProcessor.enqueue(publicEvent);
 

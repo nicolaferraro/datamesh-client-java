@@ -1,6 +1,7 @@
 package me.nicolaferraro.datamesh.client;
 
 import com.google.protobuf.ByteString;
+import me.nicolaferraro.datamesh.client.api.DataMeshConnectionInfo;
 import me.nicolaferraro.datamesh.client.api.DataMeshProjection;
 import me.nicolaferraro.datamesh.client.util.GrpcReactorUtils;
 import me.nicolaferraro.datamesh.client.util.JsonUtils;
@@ -15,6 +16,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 class DefaultDataMeshProjection implements DataMeshProjection {
 
+    private DataMeshConnectionInfo connectionInfo;
+
     private DataMeshGrpc.DataMeshStub stub;
 
     private Optional<DefaultDataMeshEvent<?>> event;
@@ -23,11 +26,12 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
     private Queue<Datamesh.Operation> operations;
 
-    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub) {
-        this(stub, null, null);
+    public DefaultDataMeshProjection(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub) {
+        this(connectionInfo, stub, null, null);
     }
 
-    public DefaultDataMeshProjection(DataMeshGrpc.DataMeshStub stub, DefaultDataMeshEvent<?> event, Long internalVersion) {
+    public DefaultDataMeshProjection(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub, DefaultDataMeshEvent<?> event, Long internalVersion) {
+        this.connectionInfo = connectionInfo;
         this.stub = stub;
         this.event = Optional.ofNullable(event);
         this.internalVersion = Optional.ofNullable(internalVersion);
@@ -128,8 +132,14 @@ class DefaultDataMeshProjection implements DataMeshProjection {
             eventBuilder = eventBuilder.setVersion(this.internalVersion.get());
         }
 
+        Datamesh.Context context = Datamesh.Context.newBuilder()
+                .setName(this.connectionInfo.getContextName())
+                .setRevision(this.connectionInfo.getContextRevision())
+                .build();
+
         Datamesh.Transaction tx = Datamesh.Transaction.newBuilder()
                 .setEvent(eventBuilder.build())
+                .setContext(context)
                 .addAllOperations(this.operations)
                 .build();
 

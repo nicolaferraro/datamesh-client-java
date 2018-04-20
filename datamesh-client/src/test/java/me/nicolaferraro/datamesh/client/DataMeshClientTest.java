@@ -3,6 +3,7 @@ package me.nicolaferraro.datamesh.client;
 
 import me.nicolaferraro.datamesh.client.api.DataMeshClient;
 import me.nicolaferraro.datamesh.test.server.DataMeshTestServer;
+import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,6 +22,13 @@ import static org.junit.Assert.assertThat;
 
 public class DataMeshClientTest {
 
+    private DataMeshClient client;
+
+    @Before
+    public void init() {
+        this.client = DataMeshTestServer.newTestServerConnection(DataMeshClientFactory.instance());
+    }
+
     static class MyEvent {
         public String name;
 
@@ -32,22 +40,16 @@ public class DataMeshClientTest {
         }
     }
 
-    // TODO implement proper shutdown in order to share the same test server, otherwise grpc will reuse the channel and tests become progressively
-    // slow on a real cluster, because clients are never disconnected really from datamesh
-
     @Test
-    public void testSimpleRead() throws InterruptedException {
-        DataMeshClient client = DataMeshTestServer.newTestServerConnection(DataMeshClientFactory.instance());
+    public void testSimpleRead() {
         client.start();
-
         Optional<String> data = client.projection().read("h1", String.class).blockOptional();
         assertFalse(data.isPresent());
         client.stop();
     }
 
     @Test
-    public void testClientApi() throws InterruptedException {
-        DataMeshClient client = DataMeshTestServer.newTestServerConnection(DataMeshClientFactory.instance());
+    public void testClientApi() {
         client.onEvent(Pattern.compile(".*"), Pattern.compile(".*"), Pattern.compile(".*"), MyEvent.class, evt -> {
 
             Mono<Integer> counter = evt.projection().read("counter", Integer.class)
@@ -81,9 +83,7 @@ public class DataMeshClientTest {
     }
 
     @Test
-    public void testParallel() throws InterruptedException {
-        DataMeshClient client = DataMeshTestServer.newTestServerConnection(DataMeshClientFactory.instance());
-
+    public void testParallel() {
         int value = new Random().nextInt();
 
         client.onEvent(Pattern.compile(".*"), Pattern.compile(".*"), Pattern.compile(".*"), MyEvent.class, evt -> {

@@ -27,7 +27,7 @@ class DefaultDataMeshClient implements DataMeshClient {
 
     private EventProcessor eventProcessor;
 
-    private EventDispatcher receiver;
+    private EventQueueConnector connector;
 
     public DefaultDataMeshClient(String host) {
         this(host, DEFAULT_PORT);
@@ -37,16 +37,18 @@ class DefaultDataMeshClient implements DataMeshClient {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         this.stub = DataMeshGrpc.newStub(channel);
         this.eventProcessor = new EventProcessor();
-        this.receiver = new EventDispatcher(stub, eventProcessor);
+        this.connector = new EventQueueConnector(stub, eventProcessor);
     }
 
     @Override
     public void start() {
         this.eventProcessor.start();
+        this.connector.start();
     }
 
     @Override
     public void stop() {
+        this.connector.stop();
         this.eventProcessor.stop();
     }
 

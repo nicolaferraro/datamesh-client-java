@@ -1,6 +1,7 @@
 package me.nicolaferraro.datamesh.springboot;
 
-import me.nicolaferraro.datamesh.client.DataMeshClient;
+import me.nicolaferraro.datamesh.client.DataMeshClientFactory;
+import me.nicolaferraro.datamesh.client.api.DataMeshClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,9 +18,9 @@ public class DataMeshAutoConfiguration {
     public DataMeshClient dataMeshClient(DataMeshProperties properties) {
         DataMeshClient client;
         if (properties.getPort() == null) {
-            client = DataMeshClient.create(properties.getHost());
+            client = DataMeshClientFactory.create(properties.getHost());
         } else {
-            client = DataMeshClient.create(properties.getHost(), properties.getPort());
+            client = DataMeshClientFactory.create(properties.getHost(), properties.getPort());
         }
 
         return client;

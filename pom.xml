@@ -15,6 +15,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
 
         <awaitility.version>3.1.0</awaitility.version>
+        <commons-io.version>2.6</commons-io.version>
         <grpc.version>1.11.0</grpc.version>
         <jackson.version>2.9.5</jackson.version>
         <junit.version>4.12</junit.version>
@@ -30,8 +31,10 @@
     </properties>
 
     <modules>
-        <module>datamesh-client-java</module>
+        <module>datamesh-client</module>
+        <module>datamesh-client-api</module>
         <module>datamesh-spring-boot-starter</module>
+        <module>datamesh-test-server</module>
     </modules>
 
 

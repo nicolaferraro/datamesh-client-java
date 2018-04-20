@@ -1,6 +1,6 @@
 package me.nicolaferraro.datamesh.springboot;
 
-import me.nicolaferraro.datamesh.client.DataMeshClient;
+import me.nicolaferraro.datamesh.client.api.DataMeshClient;
 import me.nicolaferraro.datamesh.springboot.annotation.DataMeshListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

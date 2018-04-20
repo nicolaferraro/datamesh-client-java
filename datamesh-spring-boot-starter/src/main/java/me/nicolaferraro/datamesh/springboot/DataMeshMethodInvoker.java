@@ -1,8 +1,8 @@
 package me.nicolaferraro.datamesh.springboot;
 
-import me.nicolaferraro.datamesh.client.DataMeshClient;
 import me.nicolaferraro.datamesh.client.DataMeshClientException;
-import me.nicolaferraro.datamesh.client.DataMeshEvent;
+import me.nicolaferraro.datamesh.client.api.DataMeshClient;
+import me.nicolaferraro.datamesh.client.api.DataMeshEvent;
 import me.nicolaferraro.datamesh.springboot.annotation.DataMeshListener;
 import org.reactivestreams.Publisher;
 import org.springframework.util.StringUtils;

@@ -3,6 +3,7 @@ package me.nicolaferraro.datamesh.client;
 
 import me.nicolaferraro.datamesh.client.api.DataMeshClient;
 import me.nicolaferraro.datamesh.test.server.DataMeshTestServer;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -22,11 +23,18 @@ import static org.junit.Assert.assertThat;
 
 public class DataMeshClientTest {
 
+    private DataMeshTestServer testServer;
     private DataMeshClient client;
 
     @Before
     public void init() {
-        this.client = DataMeshTestServer.newTestServerConnection(DataMeshClientFactory.instance());
+        this.testServer = DataMeshTestServer.newTestServer();
+        this.client = DataMeshClientFactory.create(this.testServer.getHost(), this.testServer.getPort());
+    }
+
+    @After
+    public void destroy() {
+        this.testServer.stop();
     }
 
     static class MyEvent {

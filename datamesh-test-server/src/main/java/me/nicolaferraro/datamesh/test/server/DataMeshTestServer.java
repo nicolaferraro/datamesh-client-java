@@ -1,16 +1,21 @@
 package me.nicolaferraro.datamesh.test.server;
 
-import me.nicolaferraro.datamesh.client.api.DataMeshAbstractClientFactory;
-import me.nicolaferraro.datamesh.client.api.DataMeshClient;
+import java.io.Closeable;
 
 public interface DataMeshTestServer {
 
-    static DataMeshClient newTestServerConnection(DataMeshAbstractClientFactory factory) {
-        return DataMeshTestServer.newTestServerConnection(new DataMeshTestServerConfiguration(), factory);
+    static DataMeshTestServer newTestServer() {
+        return DataMeshTestServer.newTestServer(new DataMeshTestServerConfiguration());
     }
 
-    static DataMeshClient newTestServerConnection(DataMeshTestServerConfiguration configuration, DataMeshAbstractClientFactory factory) {
-        return new DefaultDataMeshTestServer(configuration, factory).newServerConnection();
+    static DataMeshTestServer newTestServer(DataMeshTestServerConfiguration configuration) {
+        return new DefaultDataMeshTestServer(configuration).newTestServer();
     }
+
+    void stop();
+
+    String getHost();
+
+    Integer getPort();
 
 }

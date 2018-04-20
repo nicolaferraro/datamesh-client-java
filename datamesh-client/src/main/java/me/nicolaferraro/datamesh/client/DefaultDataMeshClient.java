@@ -5,6 +5,7 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import me.nicolaferraro.datamesh.client.api.DataMeshClient;
+import me.nicolaferraro.datamesh.client.api.DataMeshConnectionInfo;
 import me.nicolaferraro.datamesh.client.api.DataMeshEvent;
 import me.nicolaferraro.datamesh.client.api.DataMeshProjection;
 import me.nicolaferraro.datamesh.client.util.GrpcReactorUtils;
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
 
 class DefaultDataMeshClient implements DataMeshClient {
 
-    private static final int DEFAULT_PORT = 6543;
+    private DataMeshConnectionInfo connectionInfo;
 
     private DataMeshGrpc.DataMeshStub stub;
 
@@ -29,15 +30,12 @@ class DefaultDataMeshClient implements DataMeshClient {
 
     private EventQueueConnector connector;
 
-    public DefaultDataMeshClient(String host) {
-        this(host, DEFAULT_PORT);
-    }
-
-    public DefaultDataMeshClient(String host, int port) {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+    public DefaultDataMeshClient(DataMeshConnectionInfo connectionInfo) {
+        this.connectionInfo = connectionInfo;
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(connectionInfo.getHost(), connectionInfo.getPort()).usePlaintext().build();
         this.stub = DataMeshGrpc.newStub(channel);
         this.eventProcessor = new EventProcessor();
-        this.connector = new EventQueueConnector(stub, eventProcessor);
+        this.connector = new EventQueueConnector(connectionInfo, stub, eventProcessor);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package me.nicolaferraro.datamesh.client;
 
 import io.grpc.stub.StreamObserver;
+import me.nicolaferraro.datamesh.client.api.DataMeshConnectionInfo;
 import me.nicolaferraro.datamesh.client.util.GrpcReactorUtils;
 import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import me.nicolaferraro.datamesh.protobuf.Datamesh;
@@ -9,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
-import java.util.Optional;
 
 class EventQueueConnector {
 
@@ -17,15 +17,18 @@ class EventQueueConnector {
 
     private static final long RETRY_PERIOD = 5000L;
 
+    private DataMeshConnectionInfo connectionInfo;
+
     private DataMeshGrpc.DataMeshStub stub;
 
     private EventProcessor processor;
 
     private boolean running;
 
-    private Optional<StreamObserver<Datamesh.Disconnect>> disconnectChannel = Optional.empty();
+    private StreamObserver<Datamesh.Status> statusChannel;
 
-    public EventQueueConnector(DataMeshGrpc.DataMeshStub stub, EventProcessor processor) {
+    public EventQueueConnector(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub, EventProcessor processor) {
+        this.connectionInfo = connectionInfo;
         this.stub = stub;
         this.processor = processor;
     }
@@ -46,10 +49,13 @@ class EventQueueConnector {
     public void stop() {
         if (this.running) {
             this.running = false;
-            if (disconnectChannel.isPresent()) {
+            if (statusChannel != null) {
                 try {
-                    disconnectChannel.get().onNext(Datamesh.Disconnect.newBuilder().build());
-                    disconnectChannel.get().onCompleted();
+                    statusChannel.onNext(Datamesh.Status.newBuilder()
+                                .setDisconnect(Datamesh.Empty.newBuilder().build())
+                            .build());
+                    statusChannel.onCompleted();
+                    statusChannel = null;
                 } catch (Exception ex) {
                     // ignore
                 }
@@ -58,14 +64,21 @@ class EventQueueConnector {
     }
 
     private Flux<Datamesh.Event> persistentStream() {
-        return GrpcReactorUtils.<Datamesh.Event>bridgeCall(obs -> disconnectChannel = Optional.of(stub.connect(obs)))
-                .onErrorResume(e -> {
-                    if (this.running) {
-                        LOG.error("Error while connecting to the DataMesh server", e);
-                        return persistentStream().delaySubscription(Duration.ofMillis(RETRY_PERIOD));
-                    } else {
-                        return Flux.empty();
-                    }
-                });
+        return GrpcReactorUtils.<Datamesh.Event>bridgeCall(obs -> {
+                statusChannel = stub.connect(obs);
+                statusChannel.onNext(Datamesh.Status.newBuilder().setConnect(Datamesh.Context.newBuilder()
+                            .setName(connectionInfo.getContextName())
+                            .setRevision(connectionInfo.getContextRevision())
+                        .build()).build());
+
+            })
+            .onErrorResume(e -> {
+                if (this.running) {
+                    LOG.error("Error while connecting to the DataMesh server", e);
+                    return persistentStream().delaySubscription(Duration.ofMillis(RETRY_PERIOD));
+                } else {
+                    return Flux.empty();
+                }
+            });
     }
 }

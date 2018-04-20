@@ -1,7 +1,5 @@
 package me.nicolaferraro.datamesh.test.server;
 
-import me.nicolaferraro.datamesh.client.api.DataMeshAbstractClientFactory;
-import me.nicolaferraro.datamesh.client.api.DataMeshClient;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,23 +18,20 @@ class DefaultDataMeshTestServer {
 
     private DataMeshTestServerConfiguration configuration;
 
-    private DataMeshAbstractClientFactory factory;
-
-    DefaultDataMeshTestServer(DataMeshTestServerConfiguration configuration, DataMeshAbstractClientFactory factory) {
+    DefaultDataMeshTestServer(DataMeshTestServerConfiguration configuration) {
         this.configuration = configuration;
-        this.factory = factory;
     }
 
-    public DataMeshClient newServerConnection() {
-        DataMeshClient client = tryRealServer();
-        if (client != null) {
-            return client;
+    public DataMeshTestServer newTestServer() {
+        DataMeshTestServer server = tryRealServer();
+        if (server != null) {
+            return server;
         }
 
-        return wrap(this::connectTestProcess);
+        return wrap(this::createTestServer);
     }
 
-    private DataMeshClient connectTestProcess() throws IOException {
+    private DataMeshTestServer createTestServer() throws IOException {
         File dataDir = new File(configuration.getDataDirectory());
         if (!dataDir.exists()) {
             ensure(dataDir::mkdirs);
@@ -63,7 +58,7 @@ class DefaultDataMeshTestServer {
 
         int port = getFreePort();
 
-        ProcessBuilder builder = new ProcessBuilder(binary.getAbsolutePath(), "-dir", logDir.getAbsolutePath(), "-port", "" + port, "-logtostderr", "server");
+        ProcessBuilder builder = new ProcessBuilder(binary.getAbsolutePath(), "-dir", logDir.getAbsolutePath(), "-port", "" + port, "-logtostderr", "-v", "1", "server");
         builder.redirectErrorStream(true);
         Process process = builder.start();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> stopProcess(process)));
@@ -71,13 +66,42 @@ class DefaultDataMeshTestServer {
 
         wrap(() -> waitForServerStart(port));
 
-        return factory.create("localhost", port);
+        return new DataMeshTestServer() {
+            @Override
+            public String getHost() {
+                return "localhost";
+            }
+
+            @Override
+            public Integer getPort() {
+                return port;
+            }
+
+            @Override
+            public void stop() {
+                stopProcess(process);
+            }
+        };
     }
 
-    private DataMeshClient tryRealServer() {
+    private DataMeshTestServer tryRealServer() {
         if (configuration.getRealHost() != null) {
-            Integer port = configuration.getRealPort();
-            return factory.create(configuration.getRealHost(), port);
+            return new DataMeshTestServer() {
+                @Override
+                public String getHost() {
+                    return configuration.getRealHost();
+                }
+
+                @Override
+                public Integer getPort() {
+                    return configuration.getRealPort();
+                }
+
+                @Override
+                public void stop() {
+                    // not managed
+                }
+            };
         }
 
         return null;
@@ -134,7 +158,9 @@ class DefaultDataMeshTestServer {
                     LOG.info("[DataMesh Server] " + line);
                 }
             } catch (Exception ex) {
-                LOG.error("Error while reading the Data Mesh process log", ex);
+                if (process.isAlive()) {
+                    LOG.warn("Error while reading the Data Mesh process log", ex);
+                }
             }
         });
         logger.setDaemon(true);

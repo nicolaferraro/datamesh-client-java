@@ -1,5 +1,7 @@
 package me.nicolaferraro.datamesh.client.api;
 
+import java.util.Objects;
+
 public class DataMeshConnectionInfo {
 
     public static final String DEFAULT_CONTEXT_NAME = "default";
@@ -10,26 +12,25 @@ public class DataMeshConnectionInfo {
 
     private String host;
 
-    private Integer port = DEFAULT_PORT;
+    private Integer port;
 
-    private String contextName = DEFAULT_CONTEXT_NAME;
+    private String contextName;
 
-    private Long contextRevision = DEFAULT_CONTEXT_REVISION;
+    private Long contextRevision;
 
     public DataMeshConnectionInfo(String host) {
-        this.host = host;
+        this(host, DEFAULT_PORT, DEFAULT_CONTEXT_NAME, DEFAULT_CONTEXT_REVISION);
     }
 
     public DataMeshConnectionInfo(String host, Integer port) {
-        this.host = host;
-        this.port = port;
+        this(host, port, DEFAULT_CONTEXT_NAME, DEFAULT_CONTEXT_REVISION);
     }
 
     public DataMeshConnectionInfo(String host, Integer port, String contextName, Long contextRevision) {
-        this.host = host;
-        this.port = port;
-        this.contextName = contextName;
-        this.contextRevision = contextRevision;
+        this.host = Objects.requireNonNull(host, "host cannot be null");
+        this.port = port != null ? port : DEFAULT_PORT;
+        this.contextName = contextName != null ? contextName : DEFAULT_CONTEXT_NAME;
+        this.contextRevision = contextRevision != null ? contextRevision : DEFAULT_CONTEXT_REVISION;
     }
 
     public String getHost() {
@@ -45,7 +46,7 @@ public class DataMeshConnectionInfo {
     }
 
     public void setPort(Integer port) {
-        this.port = port;
+        this.port = port != null ? port : DEFAULT_PORT;
     }
 
     public String getContextName() {
@@ -53,7 +54,7 @@ public class DataMeshConnectionInfo {
     }
 
     public void setContextName(String contextName) {
-        this.contextName = contextName;
+        this.contextName = contextName != null ? contextName : DEFAULT_CONTEXT_NAME;
     }
 
     public Long getContextRevision() {
@@ -61,7 +62,7 @@ public class DataMeshConnectionInfo {
     }
 
     public void setContextRevision(Long contextRevision) {
-        this.contextRevision = contextRevision;
+        this.contextRevision = contextRevision != null ? contextRevision : DEFAULT_CONTEXT_REVISION;
     }
 
     @Override

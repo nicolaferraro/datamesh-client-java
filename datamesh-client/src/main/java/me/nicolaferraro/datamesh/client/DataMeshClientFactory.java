@@ -9,7 +9,7 @@ public interface DataMeshClientFactory {
         return create(new DataMeshConnectionInfo(host));
     }
 
-    static DataMeshClient create(String host, int port) {
+    static DataMeshClient create(String host, Integer port) {
         return create(new DataMeshConnectionInfo(host, port));
     }
 

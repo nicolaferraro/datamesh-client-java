@@ -54,6 +54,7 @@ public class DataMeshMultipleProjectsionsTest {
 
         client1.stop();
         client2.stop();
+        testServer.stop();
     }
 
 

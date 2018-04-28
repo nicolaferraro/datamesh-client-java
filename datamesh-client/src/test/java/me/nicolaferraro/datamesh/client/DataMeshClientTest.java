@@ -81,7 +81,7 @@ public class DataMeshClientTest {
             client.pushEvent(new MyEvent("evt-" + i), "group", "evt-" + i, "v1");
         }
 
-        await().atMost(5, TimeUnit.SECONDS)
+        await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> client.projection().read("counter", Integer.class).blockOptional().orElse(0), equalTo(initial + events));
 
 
@@ -115,7 +115,7 @@ public class DataMeshClientTest {
 
         for (int i=1; i<=events; i++) {
             int idx = i;
-            await().atMost(5, TimeUnit.SECONDS)
+            await().atMost(10, TimeUnit.SECONDS)
                     .until(() -> client.projection().read("evt-par-" + idx, Integer.class).blockOptional().orElse(0), equalTo(value));
         }
 

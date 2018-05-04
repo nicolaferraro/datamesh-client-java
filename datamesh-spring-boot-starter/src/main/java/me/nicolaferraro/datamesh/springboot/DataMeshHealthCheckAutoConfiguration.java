@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @Configuration
 @AutoConfigureAfter(DataMeshAutoConfiguration.class)
 @ConditionalOnBean(DataMeshClient.class)
@@ -36,13 +38,16 @@ public class DataMeshHealthCheckAutoConfiguration {
 
         @Override
         public Mono<Health> health() {
-            return client.projection().isReady().map(ready -> {
+            return Mono.first(
+                    Mono.delay(Duration.ofSeconds(10)).map(tick -> false),
+                    client.projection().isReady()
+            ).map(ready -> {
                 if (ready) {
                     return Health.up().build();
                 } else {
-                    return Health.down().status("DataMesh not reachable or not initialized").build();
+                    return Health.down().build();
                 }
-            });
+            }).onErrorResume(e -> Mono.just(Health.down().build()));
         }
     }
 

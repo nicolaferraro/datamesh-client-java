@@ -16,7 +16,12 @@ public class GrpcReactorUtils {
         ReplayProcessor<T> result = ReplayProcessor.create(1, true);
         processor.subscribe(result);
         FluxSink<T> sink = processor.sink();
-        call.accept(bridgeStreamObserver(sink));
+        try {
+            call.accept(bridgeStreamObserver(sink));
+        } catch (Exception ex) {
+            return Flux.error(ex);
+        }
+
         return result;
     }
 

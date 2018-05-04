@@ -1,2 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-me.nicolaferraro.datamesh.springboot.DataMeshAutoConfiguration
+me.nicolaferraro.datamesh.springboot.DataMeshAutoConfiguration,\
+me.nicolaferraro.datamesh.springboot.DataMeshPostProcessor,\
+me.nicolaferraro.datamesh.springboot.DataMeshHealthCheckAutoConfiguration

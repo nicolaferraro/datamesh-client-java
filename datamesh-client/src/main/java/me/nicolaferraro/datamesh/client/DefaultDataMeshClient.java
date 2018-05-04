@@ -13,6 +13,8 @@ import me.nicolaferraro.datamesh.client.util.JsonUtils;
 import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import me.nicolaferraro.datamesh.protobuf.Datamesh;
 import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -21,6 +23,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 class DefaultDataMeshClient implements DataMeshClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultDataMeshClient.class);
 
     private DataMeshConnectionInfo connectionInfo;
 
@@ -40,14 +44,18 @@ class DefaultDataMeshClient implements DataMeshClient {
 
     @Override
     public void start() {
+        LOG.debug("Starting DataMesh...");
         this.eventProcessor.start();
         this.connector.start();
+        LOG.debug("DataMesh started");
     }
 
     @Override
     public void stop() {
+        LOG.debug("Stopping DataMesh...");
         this.connector.stop();
         this.eventProcessor.stop();
+        LOG.debug("DataMesh stopped");
     }
 
     @Override

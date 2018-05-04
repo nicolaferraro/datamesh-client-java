@@ -7,7 +7,9 @@ import me.nicolaferraro.datamesh.protobuf.DataMeshGrpc;
 import me.nicolaferraro.datamesh.protobuf.Datamesh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 
@@ -17,11 +19,15 @@ class EventQueueConnector {
 
     private static final long RETRY_PERIOD = 5000L;
 
+    private static final long PING_PERIOD = 60000L;
+
     private DataMeshConnectionInfo connectionInfo;
 
     private DataMeshGrpc.DataMeshStub stub;
 
     private EventProcessor processor;
+
+    private Disposable pingSender;
 
     private boolean running;
 
@@ -43,6 +49,20 @@ class EventQueueConnector {
                             evt.getPayload().toByteArray()))
                     .doOnNext(devt -> processor.enqueue(devt))
                     .subscribe();
+
+            this.pingSender = Flux.interval(Duration.ofMillis(PING_PERIOD))
+                    .subscribeOn(Schedulers.newSingle("datamesh-ping"))
+                    .doOnEach(tick -> {
+                        try {
+                            StreamObserver<Datamesh.Status> chan = this.statusChannel;
+                            if (chan != null) {
+                                chan.onNext(Datamesh.Status.newBuilder()
+                                        .setPing(Datamesh.Empty.newBuilder()).build());
+                            }
+                        } catch (Exception ex) {
+                            LOG.warn("Cannot ping DataMesh", ex);
+                        }
+                    }).subscribe();
         }
     }
 
@@ -59,6 +79,10 @@ class EventQueueConnector {
                 } catch (Exception ex) {
                     // ignore
                 }
+            }
+            if (pingSender != null) {
+                pingSender.dispose();
+                pingSender = null;
             }
         }
     }

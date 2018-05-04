@@ -26,6 +26,8 @@ class DefaultDataMeshProjection implements DataMeshProjection {
 
     private Queue<Datamesh.Operation> operations;
 
+    private boolean errors;
+
     public DefaultDataMeshProjection(DataMeshConnectionInfo connectionInfo, DataMeshGrpc.DataMeshStub stub) {
         this(connectionInfo, stub, null, null);
     }
@@ -124,6 +126,16 @@ class DefaultDataMeshProjection implements DataMeshProjection {
         operations.add(operation);
 
         return Mono.empty();
+    }
+
+    @Override
+    public boolean hasErrors() {
+        return this.errors;
+    }
+
+    @Override
+    public void setErrors(boolean errors) {
+        this.errors = errors;
     }
 
     @Override

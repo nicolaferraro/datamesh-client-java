@@ -34,14 +34,25 @@ class EventProcessor {
 
         this.processors = evt -> Flux.empty();
 
-        this.connection = flux.delayUntil(evt -> this.processors.apply(evt))
-                .map(DataMeshEvent::projection)
-                .delayUntil(DataMeshProjection::persist);
+        this.connection = flux.delayUntil(evt -> Flux.from(this.processors.apply(evt)))
+                .filter(evt -> !evt.projection().hasErrors())
+                .delayUntil(evt ->
+                    evt.projection().persist().onErrorResume(err -> {
+                        LOG.warn("Could not persist projection changes due to error", err);
+                        return Mono.empty();
+                    })
+                );
     }
 
     public void start() {
         if (this.connectionSubscription == null) {
-            this.connectionSubscription = connection.subscribe();
+            this.connectionSubscription = connection.subscribe(evt -> {
+                LOG.debug("Processing of event {} has completed", evt);
+            }, e -> {
+                LOG.error("Fatal error occurred while processing events", e);
+            }, () -> {
+                LOG.error("Event processing has terminated unexpectedly");
+            });
         }
     }
 
@@ -65,13 +76,13 @@ class EventProcessor {
 
     private <T> Function<DataMeshEvent<?>, Publisher<?>> processor(Pattern group, Pattern name, Pattern version, Class<T> eventClass, Function<DataMeshEvent<T>, Publisher<?>> processing) {
         return evt -> {
-            if (!group.asPredicate().test(evt.getGroup())) {
+            if (!group.asPredicate().test(Optional.ofNullable(evt.getGroup()).orElse(""))) {
                 return Flux.empty();
             }
-            if (!name.asPredicate().test(evt.getName())) {
+            if (!name.asPredicate().test(Optional.ofNullable(evt.getName()).orElse(""))) {
                 return Flux.empty();
             }
-            if (!version.asPredicate().test(evt.getVersion())) {
+            if (!version.asPredicate().test(Optional.ofNullable(evt.getVersion()).orElse(""))) {
                 return Flux.empty();
             }
 
@@ -80,7 +91,19 @@ class EventProcessor {
                 return Flux.empty();
             }
 
-            return processing.apply(convertedEvent.get());
+            Publisher<?> resultPublisher;
+            try {
+                resultPublisher = processing.apply(convertedEvent.get());
+            } catch (Exception ex) {
+                resultPublisher = Flux.error(new DataMeshClientException("Error while calling function", ex));
+            }
+
+            return Flux.from(resultPublisher)
+                .onErrorResume(e -> {
+                    LOG.warn("An error occurred while invoking user defined method on event " + evt, e);
+                    evt.projection().setErrors(true);
+                    return Flux.empty();
+                });
         };
     }
 

@@ -6,6 +6,7 @@ import me.nicolaferraro.datamesh.client.api.DataMeshEvent;
 import me.nicolaferraro.datamesh.springboot.annotation.DataMeshListener;
 import org.reactivestreams.Publisher;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -59,7 +60,7 @@ class DataMeshMethodInvoker {
         try {
             return method.invoke(bean, evt);
         } catch (Exception ex) {
-            throw new DataMeshClientException("Error while invoking user provided method " + method.getName() + " on class " + (bean != null ? bean.getClass().getCanonicalName() : "null"), ex);
+            return Flux.error(new DataMeshClientException("Error while invoking user provided method " + method.getName() + " on class " + (bean != null ? bean.getClass().getCanonicalName() : "null"), ex));
         }
     }
 

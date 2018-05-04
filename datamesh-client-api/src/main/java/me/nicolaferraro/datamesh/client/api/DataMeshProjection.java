@@ -10,4 +10,8 @@ public interface DataMeshProjection extends DataMeshReadableProjection {
 
     Mono<Void> persist();
 
+    boolean hasErrors();
+
+    void setErrors(boolean errors);
+
 }
